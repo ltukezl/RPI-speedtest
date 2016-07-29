@@ -16,9 +16,11 @@ PWM to control bell
 
 Mechanism to send data to counter MUX
 
-Game logic itself. (very likely with higher level language than assembly)
+Game logic itself.
 
 memmap is from https://github.com/dwelch67/raspberrypi
 
 tool used to compile asm to arm is https://launchpad.net/gcc-arm-embedded/+download
+
+Code is being tested with my emulator hobby project.
 

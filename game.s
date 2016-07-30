@@ -35,15 +35,39 @@ seq_count_idx:
     
 .align 4
 hw_init:
-//param void 
-//returns void
+    //param:   void 
+    //returns: void
+    //GPIO 12 and 13 are PWM needed for buzzer and display
+    //set pins 11, 15, 16, 18 as button input pins
+    //pins are input by default so we need to specify them as pull up
+    ldr r0, =0x20200000 //gpio base register
+    mov r1, #2             //pullup
+    strb r1, [r0, #0x94]
+
+    //wait period of 150 cycles needed as per doc
+    mov r1, #150
+wait1:
+    sub r1, #1
+    bne wait1
+    
+    //give the input pins clock so we can read them.
+    ldr r1, =0x58800
+    str r1, [r0, #0x98]
+    
+    //wait period of 150 cycles needed as per doc
+    mov r1, #150
+wait2:
+    sub r1, #1
+    bne wait2
+    
     bx lr
 
-notmain:
+notmain: //not main because assembler might put overhead
     mov r0, #3
     bl btn_press
-    b .    
-
+    beq .  
+sub r0, #1    
+b notmain
 hang: b hang
 
 .thumb
@@ -55,10 +79,14 @@ thumb supports direct byte transfers (wtf arm?)
 btn_press:
     //param:   button pressed index (r0)
     //returns: bool if corresponds next in seq
+    //todo increment score
     ldr r1, =expected_idx
     ldrb r2, [r1] //arr is 16 bits long so we can use byte load for nice overflow
     ldr r3, =seq
     ldrb r3, [r3, r2]
+    
+    add r2, #1
+    strb r2, [r1] //increment the index to next position
     
     cmp r0, r3 
     beq success //would rather use arm mode for moveq and movne so no need to branch

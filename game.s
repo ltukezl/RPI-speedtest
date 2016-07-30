@@ -1,10 +1,30 @@
-b _start
 .globl _start
-
 _start:
-    mov sp,#0x8000 //stack init is required
-    bl notmain
-    b hang
+    //interupt vector table (IVT), these values are relative jumps.
+    ldr pc,reset_handler
+    ldr pc,undefined_handler
+    ldr pc,swi_handler
+    ldr pc,prefetch_handler
+    ldr pc,data_handler
+    ldr pc,unused_handler
+    ldr pc,irq_handler
+    ldr pc,fiq_handler
+    
+//previous IVT jumps to these labels. Since labels are relative we need to copy
+//them to addr 0 with our IVT. These labels have value of absolute addresses of our
+//IRQ handler
+reset_handler:       .word reset_routine
+undefined_handler:  .word hang
+swi_handler:         .word hang
+prefetch_handler:   .word hang
+data_handler:        .word hang
+unused_handler:     .word hang
+irq_handler:         .word irq_routine
+fiq_handler:         .word hang
+
+irq_routine:
+    b .
+
 
 seq:
     .byte    3
@@ -62,12 +82,26 @@ wait2:
     
     bx lr
 
+    
+reset_routine:
+    mov sp,#0x8000 //stack init is required
+    mov r0, #0x08000000 //for purpose of my emulator, would be linked at 0x8000 on rpi
+    mov r1, #0 //location for interrupt vectors
+    ldmia r0!, {r2-r9} // load IVT to stack
+    stmia r1!, {r2-r9} // store IVT from stack to 0 addr
+    ldmia r0!, {r2-r9} // load absolute addresses to stack
+    stmia r1!, {r2-r9} // store absolute addresses from stack to 0 addr
+    bl notmain
+    b hang
+    
 notmain: //not main because assembler might put overhead
-    mov r0, #3
+    bl hw_init
+    mov r0, #3 //btn test
+game_loop:
     bl btn_press
     beq .  
 sub r0, #1    
-b notmain
+b game_loop
 hang: b hang
 
 .thumb

@@ -47,7 +47,7 @@ hw_init:
     //wait period of 150 cycles needed as per doc
     mov r1, #150
 wait1:
-    sub r1, #1
+    subs r1, #1
     bne wait1
     
     //give the input pins clock so we can read them.
@@ -57,7 +57,7 @@ wait1:
     //wait period of 150 cycles needed as per doc
     mov r1, #150
 wait2:
-    sub r1, #1
+    subs r1, #1
     bne wait2
     
     bx lr

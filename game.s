@@ -80,8 +80,44 @@ wait2:
     subs r1, #1
     bne wait2
     
+    //set pins 21, 22, 23, 24 as button LED pins (output)
+    ldr r1, =0x1248
+    str r1, [r0, #0x8]
+    
     bx lr
+    
 
+led_on:
+    //param:  gpio number of the output pin (r0)
+    //return: void
+    ldr r1, =0x20200000 //gpio base register
+    mov r2, #1
+    lsl r2, r0             //idx of led
+    str r2, [r1, #0x1c]   //set register
+    bx lr
+    
+led_off:
+    //param:  gpio number of the output pin (r0)
+    //return: void
+    ldr r1, =0x20200000 //gpio base register
+    mov r2, #1
+    lsl r2, r0             //idx of led
+    str r2, [r1, #0x28]   //set register
+    bx lr
+    
+led_toggle:
+    //param:  gpio number of the output pin (r0)
+    //return: void
+    ldr r1, =0x20200000 //gpio base register
+    mov r2, #1
+    lsl r2, r0            //idx of led
+    ldr r3, [r1, #0x34]
+    tst r2, r3            //mask with our shift to see if the pin is high or low
+    //both functions take gpio num as r0, it's already there
+    beq led_on          //was low
+    bne led_off         //Was high
+    bx lr
+    
     
 reset_routine:
     mov sp,#0x8000 //stack init is required
@@ -104,12 +140,13 @@ sub r0, #1
 b game_loop
 hang: b hang
 
-.thumb
-.thumb_func
+
 /*
 my emulator didnt support co processors yet, needed to put this to thumb since
 thumb supports direct byte transfers (wtf arm?)
 */
+.thumb
+.thumb_func
 btn_press:
     //param:   button pressed index (r0)
     //returns: bool if corresponds next in seq
@@ -124,7 +161,7 @@ btn_press:
     
     cmp r0, r3 
     beq success //would rather use arm mode for moveq and movne so no need to branch
-    bne fail    //also presetting r0 to anything messes with with conditional flags when imm offset
+    bne fail    //also presetting r0 to anything messes with conditional flags when imm offset (because of thumb mode)
 success:
     mov r0, #1
     b done
@@ -132,7 +169,3 @@ fail:
     mov r0, #0
 done:
     bx lr
-
-
-
-
